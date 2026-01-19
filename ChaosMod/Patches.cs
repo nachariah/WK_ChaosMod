@@ -32,8 +32,8 @@ namespace ChaosMod.Patches
                 CL_GameManager.DeathType pirateDeath = new CL_GameManager.DeathType();
                 pirateDeath.deathText = "DEAD MEN TELL NO TALES";
                 CL_GameManager.gMan.deathTypes[0] = pirateDeath;
-                __instance.Kill();
                 EventManager.PlayAudio((AudioClip)EventManager.prefabs["ShipCollide"], 0.85f);
+                __instance.Kill();
             }
             else if (hit.gameObject.GetComponent<TrainAI>() != null)
             {

@@ -76,6 +76,10 @@ namespace ChaosMod
                 CL_GameManager.gamemode.allowAchievements = false;
                 CL_GameManager.gamemode.allowCheatedScores = false;
             }
+            else if (scene.name == "Main-Menu")
+            {
+                ChaosUI.CreateMainMenuText();
+            }
         }
     }
 }

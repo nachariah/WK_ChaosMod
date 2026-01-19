@@ -122,7 +122,7 @@ namespace ChaosMod.UI
                 y += entries[i].Height + 6f;
             }
         }
-        private TMP_FontAsset FindTicketingFont()
+        private static TMP_FontAsset FindTicketingFont()
         {
             foreach (var font in Resources.FindObjectsOfTypeAll<TMP_FontAsset>())
             {
@@ -132,6 +132,41 @@ namespace ChaosMod.UI
 
             Debug.LogWarning("[Chaos - UI] Ticketing SDF font not found");
             return null;
+        }
+        public static void CreateMainMenuText()
+        {
+            // Canvas
+            GameObject canvasObj = new GameObject("Canvas");
+            canvasObj.transform.SetParent(new GameObject("ChaosVersion").transform, false);
+
+            Canvas canvas = canvasObj.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 0;
+
+            canvasObj.AddComponent<CanvasScaler>().uiScaleMode =
+                CanvasScaler.ScaleMode.ScaleWithScreenSize;
+
+            // Text
+            GameObject textObj = new GameObject("StatusText");
+            textObj.transform.SetParent(canvasObj.transform, false);
+
+            TMP_Text statusText = textObj.AddComponent<TextMeshProUGUI>();
+            statusText.text = "CHAOS MOD v"+Main.pluginVersion;
+            statusText.fontSize = 14;
+            statusText.color = Color.white;
+            statusText.alignment = TextAlignmentOptions.TopRight;
+
+            TMP_FontAsset font = FindTicketingFont();
+            if (font != null)
+                statusText.font = font;
+
+            RectTransform rect = statusText.rectTransform;
+            rect.anchorMin = new Vector2(1f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(1f, 1f);
+
+            rect.anchoredPosition = new Vector2(-5f, -30f);
+            rect.sizeDelta = new Vector2(250f, 30f);
         }
     }
     public class EventEntry : MonoBehaviour
