@@ -34,11 +34,9 @@ namespace ChaosMod.Events
             Events.Add(new Event().SetEntry("It's Turbo Time!", 0f, TurboTime)); //Prepare for launch
             Events.Add(new Event().SetEntry("FEAST MODE ACTIVATED", 20f, FeastMode)); //Prepare for lunch
             Events.Add(new Event().SetEntry("Roach Rain", 20f, SkyDiamonds)); //Raining Plat. Roaches
-            //11-19
+            //11-17
             Events.Add(new Event().SetEntry("Yarr Harr", 0f, PirateShip)); //Incoming Pirateship
             Events.Add(new Event().SetEntry("Yahoo!", 0f, PlayerLaunch));
-            Events.Add(new Event().SetEntry("2x Speed", 0f, TimeManager.DoubleSpeed)); //Timescale
-            Events.Add(new Event().SetEntry("1/2x Speed", 0f, TimeManager.HalfSpeed)); //Timescale
             Events.Add(new Event().SetEntry("Will you be my buddy?", 0f, SpawnBuddies));
             Events.Add(new Event().SetEntry("Moving Day", 0f, SpawnFurniture));
             Events.Add(new Event().SetEntry("Old Spice Train", 0f, OldSpiceTrain));
@@ -103,7 +101,6 @@ namespace ChaosMod.Events
             AudioSource source = go.AddComponent<AudioSource>();
             source.clip = clip;
             source.volume = volume;
-            source.outputAudioMixerGroup = AudioMixerUtil.GetMasterGroup();
 
             if (distortion > 0f)
             {
@@ -153,8 +150,7 @@ namespace ChaosMod.Events
             }
 
             AudioSource song = obj.GetComponent<AudioSource>();
-            song.outputAudioMixerGroup = AudioMixerUtil.GetMasterGroup();
-            song.volume = 0.85f;
+            song.gameObject.AddComponent<AudioDistortionFilter>().distortionLevel = 0.1f;
 
             obj.AddComponent<HouseAI>();
         }
@@ -192,18 +188,18 @@ namespace ChaosMod.Events
         }
         private static void TurboTime()
         {
-            PlayAudio((AudioClip)prefabs["TurboTime"]);
+            PlayAudio((AudioClip)prefabs["TurboTime"], 0.1f);
             ENT_Player.playerObject.AddForce(Vector3.up * 30);
         }
         private static void FeastMode()
         {
-            PlayAudio((AudioClip)prefabs["FeastMode"]);
+            PlayAudio((AudioClip)prefabs["FeastMode"], 0.05f);
             GameObject go = new GameObject();
             go.AddComponent<FeastModeThinker>();
         }
         private static void SkyDiamonds()
         {
-            PlayAudio((AudioClip)prefabs["SkyDiamonds"], 0f,0.75f);
+            PlayAudio((AudioClip)prefabs["SkyDiamonds"], 0.05f);
             GameObject go = new GameObject();
             go.AddComponent<RoachRain>();
         }
@@ -225,7 +221,7 @@ namespace ChaosMod.Events
         }
         private static void PlayerLaunch()
         {
-            PlayAudio((AudioClip)prefabs["Yahoo"], 0.65f, 1f);
+            PlayAudio((AudioClip)prefabs["Yahoo"], 0.2f);
             ENT_Player.playerObject.AddForce((ENT_Player.GetPlayer().transform.forward * 7) + (Vector3.up * 2));
         }
         private static void SpawnBuddies()
@@ -236,7 +232,7 @@ namespace ChaosMod.Events
                 EntityHolder.SetVariables();
 
             float amount = 6;
-            if (Main.instance.hardMode)
+            if (Main.hardMode)
                 amount = 15;
 
             for (int i = 0; i < amount; i++)
@@ -257,7 +253,7 @@ namespace ChaosMod.Events
                 EntityHolder.SetVariables();
 
             float amount = 15;
-            if (Main.instance.hardMode)
+            if (Main.hardMode)
                 amount = 30;
 
             for (int i = 0; i < amount; i++)
@@ -298,9 +294,7 @@ namespace ChaosMod.Events
 
             AudioSource song = train.GetComponent<AudioSource>();
             song.clip = (AudioClip)prefabs["OldSpice" + UnityEngine.Random.Range(1, 4).ToString()];
-            song.volume = 0.65f;
-            song.outputAudioMixerGroup = AudioMixerUtil.GetMasterGroup();
-            train.AddComponent<AudioDistortionFilter>().distortionLevel = 0.9f;
+            train.AddComponent<AudioDistortionFilter>().distortionLevel = 0.975f;
             song.Play();
 
             train.AddComponent<TrainAI>();
@@ -376,11 +370,11 @@ namespace ChaosMod.Events
 
             transform.rotation = Quaternion.LookRotation(toCamera,Vector3.up) * Quaternion.Euler(90f, 0f, 0f);
 
-            if (Main.instance.hardMode)
+            if (Main.hardMode)
                 toCamera *= 3;
             transform.position += toCamera * 3 * Mathf.Clamp(Vector3.Distance(transform.position,Camera.main.transform.position)/20,1f,10f) * Time.deltaTime;
 
-            timeLeft -= Time.deltaTime / TimeManager.currentSpeed;
+            timeLeft -= Time.deltaTime;
             if (timeLeft <= 0)
                 Destroy(gameObject);
         }
@@ -431,7 +425,7 @@ namespace ChaosMod.Events
                 nextTick -= 0.35f;
             }
 
-            timeLeft -= Time.deltaTime / TimeManager.currentSpeed;
+            timeLeft -= Time.deltaTime;
             if (timeLeft <= 0)
             {
                 Destroy(gameObject);
@@ -481,7 +475,7 @@ namespace ChaosMod.Events
                 nextTick -= 0.15f;
             }
 
-            timeLeft -= Time.deltaTime / TimeManager.currentSpeed;
+            timeLeft -= Time.deltaTime;
             if (timeLeft <= 0)
             {
                 Destroy(gameObject);
@@ -501,10 +495,10 @@ namespace ChaosMod.Events
         }
         void Update()
         {
-            if (Main.instance.hardMode)
-                transform.position -= Vector3.up * 70 * Time.deltaTime;
-            else
+            if (Main.hardMode)
                 transform.position -= Vector3.up * 50 * Time.deltaTime;
+            else
+                transform.position -= Vector3.up * 30 * Time.deltaTime;
 
             float diff = player.position.y - transform.position.y;
 
@@ -541,10 +535,10 @@ namespace ChaosMod.Events
         }
         void Update()
         {
-            if (Main.instance.hardMode)
-                transform.position += dir * 100 * Time.deltaTime;
-            else
+            if (Main.hardMode)
                 transform.position += dir * 75 * Time.deltaTime;
+            else
+                transform.position += dir * 50 * Time.deltaTime;
             transform.rotation = Quaternion.LookRotation(dir, Vector3.up) * Quaternion.Euler(-90f, 0f, 0f);
 
             float dist = Vector3.Distance(transform.position, player.position + (Vector3.up/2));
@@ -579,50 +573,6 @@ namespace ChaosMod.Events
         void Update()
         {
             transform.rotation = Quaternion.LookRotation(Camera.main.transform.position - transform.position, Vector3.up) * Quaternion.Euler(90f, 0f, 0f);
-        }
-    }
-    public static class AudioMixerUtil
-    {
-        private static AudioMixerGroup masterGroup = null;
-        public static AudioMixerGroup GetMasterGroup()
-        {
-            if (masterGroup == null)
-                masterGroup = FindMainMixerGroup();
-            return masterGroup;
-        }
-        private static AudioMixerGroup FindMainMixerGroup()
-        {
-            foreach (var src in UnityEngine.Object.FindObjectsOfType<AudioSource>())
-            {
-                if (src.outputAudioMixerGroup != null && src.outputAudioMixerGroup.name == "Master")
-                {
-                    Debug.Log($"[ChaosMod - Audio] Found mixer group: {src.outputAudioMixerGroup.name}");
-                    return src.outputAudioMixerGroup;
-                }
-            }
-
-            Debug.LogWarning("[ChaosMod - Audio] No AudioMixerGroup found");
-            return null;
-        }
-    }
-    public static class TimeManager
-    {
-        public static float currentSpeed = 1f;
-        public static void DoubleSpeed()
-        {
-            currentSpeed *= 2;
-            currentSpeed = Mathf.Clamp(currentSpeed,0.25f,4f);
-            CL_GameManager.SetTimescaleMult(currentSpeed);
-        }
-        public static void HalfSpeed()
-        {
-            currentSpeed /= 2;
-            currentSpeed = Mathf.Clamp(currentSpeed, 0.25f, 4f);
-            CL_GameManager.SetTimescaleMult(currentSpeed);
-        }
-        public static void Reset()
-        {
-            currentSpeed = 1f;
         }
     }
     public static class EntityHolder

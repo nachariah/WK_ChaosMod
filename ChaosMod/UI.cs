@@ -151,7 +151,7 @@ namespace ChaosMod.UI
             textObj.transform.SetParent(canvasObj.transform, false);
 
             TMP_Text statusText = textObj.AddComponent<TextMeshProUGUI>();
-            statusText.text = "CHAOS MOD v"+Main.pluginVersion;
+            statusText.text = "CHAOS MOD v"+Plugin.pluginVersion;
             statusText.fontSize = 14;
             statusText.color = Color.white;
             statusText.alignment = TextAlignmentOptions.TopRight;
@@ -260,9 +260,9 @@ namespace ChaosMod.UI
             if (!awake) return;
 
             if (timeLeft > 0f)
-                timeLeft -= Time.deltaTime / TimeManager.currentSpeed;
+                timeLeft -= Time.deltaTime;
             if (eventTimer > 0f)
-                eventTimer -= Time.deltaTime / TimeManager.currentSpeed;
+                eventTimer -= Time.deltaTime;
 
             if (timerFill != null && eventTimerMax > 0f)
             {

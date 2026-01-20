@@ -11,38 +11,53 @@ using ChaosMod.Events;
 namespace ChaosMod
 {
     [BepInPlugin(pluginGuid, "ChaosMod", pluginVersion)]
-    public class Main : BaseUnityPlugin
+    public class Plugin : BaseUnityPlugin
     {
         public const string pluginGuid = "nachariah.whiteknuckle.chaosmod";
-        public const string pluginVersion = "1.0.0";
-
-        public static Main instance;
-
-        private bool active = false;
-        public bool hardMode = false;
-        private float timeMax = 5f;
-        private float timeLeft;
+        public const string pluginVersion = "1.0.2";
 
         void Awake()
         {
             Logger.LogInfo("[ChaosMod] Patching...");
-            DontDestroyOnLoad(gameObject);
-            instance = this;
-            timeLeft = timeMax;
             Harmony harmony = new Harmony(pluginGuid);
             harmony.PatchAll();
             EventManager.LoadBundle();
             EventManager.FillList();
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
-        void Update()
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (scene.name == "Game-Main")
+            {
+                CommandConsole.hasCheated = true;
+                CL_GameManager.gamemode.allowAchievements = false;
+                CL_GameManager.gamemode.allowCheatedScores = false;
+                Main.GameStart();
+                if (EntityHolder.buddy == null)
+                    EntityHolder.SetVariables();
+            }
+            else if (scene.name == "Main-Menu")
+            {
+                ChaosUI.CreateMainMenuText();
+            }
+        }
+    }
+    public static class Main
+    {
+        private static bool active = false;
+        public static bool hardMode = false;
+        private static float timeMax = 5f;
+        private static float timeLeft;
+
+        public static void MainUpdate()
         {
             if (!active) return;
 
             if (hardMode)
-                timeLeft -= Time.deltaTime * 3 / TimeManager.currentSpeed;
+                timeLeft -= Time.deltaTime * 3;
             else
-                timeLeft -= Time.deltaTime / TimeManager.currentSpeed;
+                timeLeft -= Time.deltaTime;
 
             if (timeLeft < 0)
             {
@@ -54,32 +69,19 @@ namespace ChaosMod
 
             ChaosUI.instance.SetTimer(fillValue);
         }
-        private void StartChaos()
+        private static void StartChaos()
         {
             hardMode = CL_GameManager.IsHardmode();
             timeLeft = timeMax;
             ChaosUI.ShowUI();
             active = true;
         }
-        public void GameStart()
+        public static void GameStart()
         {
             if (active)
                 active = false;
             if (SceneManager.GetActiveScene().name == "Game-Main")
-                instance.StartChaos();
-        }
-        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-        {
-            if (scene.name == "Game-Main")
-            {
-                CommandConsole.hasCheated = true;
-                CL_GameManager.gamemode.allowAchievements = false;
-                CL_GameManager.gamemode.allowCheatedScores = false;
-            }
-            else if (scene.name == "Main-Menu")
-            {
-                ChaosUI.CreateMainMenuText();
-            }
+                StartChaos();
         }
     }
 }

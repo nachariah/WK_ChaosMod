@@ -10,15 +10,13 @@ using UnityEngine.SceneManagement;
 
 namespace ChaosMod.Patches
 {
-    [HarmonyPatch(typeof(CL_GameManager), "Start")]
-    public static class CL_GameManager_Start_Patch
+    [HarmonyPatch(typeof(ENT_Player), "Update")]
+    public static class ENT_Player_Update_Patch
     {
-        private static void Postfix()
+        [HarmonyPostfix]
+        private static void Postfix(ENT_Player __instance)
         {
-            Main.instance.GameStart();
-            TimeManager.Reset();
-            if (EntityHolder.buddy == null)
-                EntityHolder.SetVariables();
+            Main.MainUpdate();
         }
     }
     [HarmonyPatch(typeof(ENT_Player), "OnControllerColliderHit")]
