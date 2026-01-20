@@ -24,7 +24,6 @@ namespace ChaosMod.Events
         {
             Events.Clear();
             //0-10
-            /*
             Events.Add(new Event().SetEntry("Perk Overdose",0f, PerkOverdose)); //10 of a random perk
             Events.Add(new Event().SetEntry("Bloodbug Infestation", 0f, BloodbugHorde)); //10 Bloodbugs
             Events.Add(new Event().SetEntry("House M.D.", 30f, SpawnHouseMD)); //House M.D.
@@ -40,7 +39,6 @@ namespace ChaosMod.Events
             Events.Add(new Event().SetEntry("Yahoo!", 0f, PlayerLaunch));
             Events.Add(new Event().SetEntry("Will you be my buddy?", 0f, SpawnBuddies));
             Events.Add(new Event().SetEntry("Moving Day", 0f, SpawnFurniture));
-            */
             Events.Add(new Event().SetEntry("Old Spice Train", 0f, OldSpiceTrain));
             Events.Add(new Event().SetEntry("Advertisement", 4f, JoeBiden));
             Events.Add(new Event().SetEntry("The Red Carpet", 0f, RedCarpet));
