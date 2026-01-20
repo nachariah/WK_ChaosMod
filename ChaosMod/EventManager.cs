@@ -24,6 +24,7 @@ namespace ChaosMod.Events
         {
             Events.Clear();
             //0-10
+            /*
             Events.Add(new Event().SetEntry("Perk Overdose",0f, PerkOverdose)); //10 of a random perk
             Events.Add(new Event().SetEntry("Bloodbug Infestation", 0f, BloodbugHorde)); //10 Bloodbugs
             Events.Add(new Event().SetEntry("House M.D.", 30f, SpawnHouseMD)); //House M.D.
@@ -34,14 +35,20 @@ namespace ChaosMod.Events
             Events.Add(new Event().SetEntry("It's Turbo Time!", 0f, TurboTime)); //Prepare for launch
             Events.Add(new Event().SetEntry("FEAST MODE ACTIVATED", 20f, FeastMode)); //Prepare for lunch
             Events.Add(new Event().SetEntry("Roach Rain", 20f, SkyDiamonds)); //Raining Plat. Roaches
-            //11-17
+            //11-19
             Events.Add(new Event().SetEntry("Yarr Harr", 0f, PirateShip)); //Incoming Pirateship
             Events.Add(new Event().SetEntry("Yahoo!", 0f, PlayerLaunch));
             Events.Add(new Event().SetEntry("Will you be my buddy?", 0f, SpawnBuddies));
             Events.Add(new Event().SetEntry("Moving Day", 0f, SpawnFurniture));
+            */
             Events.Add(new Event().SetEntry("Old Spice Train", 0f, OldSpiceTrain));
             Events.Add(new Event().SetEntry("Advertisement", 4f, JoeBiden));
             Events.Add(new Event().SetEntry("The Red Carpet", 0f, RedCarpet));
+            //Prop Magnet
+            //Shrek
+            //20-29
+            //Blizzard
+            //Christmas
         }
         public static void RandomEvent()
         {
@@ -294,7 +301,7 @@ namespace ChaosMod.Events
 
             AudioSource song = train.GetComponent<AudioSource>();
             song.clip = (AudioClip)prefabs["OldSpice" + UnityEngine.Random.Range(1, 4).ToString()];
-            train.AddComponent<AudioDistortionFilter>().distortionLevel = 0.975f;
+            train.AddComponent<AudioDistortionFilter>().distortionLevel = 0.85f;
             song.Play();
 
             train.AddComponent<TrainAI>();
@@ -543,13 +550,17 @@ namespace ChaosMod.Events
 
             float dist = Vector3.Distance(transform.position, player.position + (Vector3.up/2));
 
+            if (!pDead && !passed)
+                transform.GetComponent<AudioDistortionFilter>().distortionLevel = Mathf.Clamp(dist/1000,0f,0.2f) + 0.75f;
+
             if (Vector3.Distance(transform.position + (Vector3.up/2), player.position) < 1.5f && !pDead && !ENT_Player.GetPlayer().IsDead())
             {
                 pDead = true;
                 CL_GameManager.DeathType spiceDeath = new CL_GameManager.DeathType();
                 spiceDeath.deathText = "TOO MUCH OLD SPICE";
                 CL_GameManager.gMan.deathTypes[0] = spiceDeath;
-                EventManager.PlayAudio((AudioClip)EventManager.prefabs["TrainHit"], 0.85f, 0.9f);
+                EventManager.PlayAudio((AudioClip)EventManager.prefabs["TrainHit"], 0.75f, 0.9f);
+                song.volume = 0.75f;
                 ENT_Player.GetPlayer().Kill();
             }
 
@@ -561,8 +572,8 @@ namespace ChaosMod.Events
             }
             else
                 passed = true;
-            if (dist > 450 && song != null && song.volume > 0)
-                song.volume -= Time.deltaTime;
+            if (dist > 40f && passed && song != null && song.volume > 0)
+                transform.GetComponent<AudioDistortionFilter>().distortionLevel -= Time.deltaTime / 5;
             if (dist > 600)
                 Destroy(gameObject);
         }

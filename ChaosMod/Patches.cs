@@ -38,7 +38,7 @@ namespace ChaosMod.Patches
                 CL_GameManager.DeathType spiceDeath = new CL_GameManager.DeathType();
                 spiceDeath.deathText = "TOO MUCH OLD SPICE";
                 CL_GameManager.gMan.deathTypes[0] = spiceDeath;
-                EventManager.PlayAudio((AudioClip)EventManager.prefabs["TrainHit"], 0.85f, 0.9f);
+                EventManager.PlayAudio((AudioClip)EventManager.prefabs["TrainHit"], 0.75f, 0.9f);
                 __instance.Kill();
             }
         }

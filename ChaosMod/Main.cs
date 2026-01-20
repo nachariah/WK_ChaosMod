@@ -14,7 +14,7 @@ namespace ChaosMod
     public class Plugin : BaseUnityPlugin
     {
         public const string pluginGuid = "nachariah.whiteknuckle.chaosmod";
-        public const string pluginVersion = "1.0.2";
+        public const string pluginVersion = "1.0.3";
 
         void Awake()
         {
