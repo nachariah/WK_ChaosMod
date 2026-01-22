@@ -1,23 +1,16 @@
-﻿using BepInEx;
-using ChaosMod.UI;
+﻿using ChaosMod.UI;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.Audio;
-using UnityEngine.Events;
 using UnityEngine.Video;
 
 namespace ChaosMod.Events
 {
     public class EventManager : MonoBehaviour
     {
-        private static List<Event> Events = new List<Event>();
+        private static readonly List<Event> Events = new List<Event>();
         public static Dictionary<string, UnityEngine.Object> prefabs = new Dictionary<string, UnityEngine.Object>();
         public static AssetBundle chaosBundle = null;
         public static void FillList()
@@ -47,6 +40,11 @@ namespace ChaosMod.Events
             //20-29
             //Blizzard
             //Christmas
+            //Toggle Mass
+            //Bring Mass Below You
+            //Double Mass Speed
+            //Spawn Face
+            //Raining Gifts (Birthday)
         }
         public static void RandomEvent()
         {
@@ -56,8 +54,7 @@ namespace ChaosMod.Events
                 FillList();
             Event randEvent = Events[UnityEngine.Random.Range(0, Events.Count)];
             ChaosUI.instance.AddEntry(randEvent.name, randEvent.time);
-            if (randEvent.action != null )
-                randEvent.action();
+            randEvent.action?.Invoke();
         }
         public static void LoadBundle()
         {
@@ -342,11 +339,11 @@ namespace ChaosMod.Events
             if (EntityHolder.explosiveRoach == null)
                 EntityHolder.SetVariables();
             Transform player = ENT_Player.GetPlayer().transform;
-            for (float x = -4f; x < 4f; x++)
+            for (float x = -3f; x < 3f; x++)
             {
-                for (float z = -4f; z < 4f; z++)
+                for (float z = -3f; z < 3f; z++)
                 {
-                    Instantiate(EntityHolder.explosiveRoach,player.position + player.forward + new Vector3(x/4,-0.5f,z/4),Quaternion.identity,CL_EventManager.currentLevel.transform);
+                    Instantiate(EntityHolder.explosiveRoach,player.position + player.forward + new Vector3(x/3,-0.5f,z/3),Quaternion.identity,CL_EventManager.currentLevel.transform);
                 }
             }
         }
