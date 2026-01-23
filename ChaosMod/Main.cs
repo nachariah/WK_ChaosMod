@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using ChaosMod.UI;
 using ChaosMod.Events;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ChaosMod
 {
@@ -11,7 +13,7 @@ namespace ChaosMod
     public class Plugin : BaseUnityPlugin
     {
         public const string pluginGuid = "nachariah.whiteknuckle.chaosmod";
-        public const string pluginVersion = "1.0.3";
+        public const string pluginVersion = "1.1.0";
 
         void Awake()
         {
@@ -51,10 +53,14 @@ namespace ChaosMod
         {
             if (!active) return;
 
+            float deltaTime = Time.deltaTime;
+            if (ChaosSettings.easyMode)
+                deltaTime /= 2;
+
             if (hardMode)
-                timeLeft -= Time.deltaTime * 3;
+                timeLeft -= deltaTime * 3;
             else
-                timeLeft -= Time.deltaTime;
+                timeLeft -= deltaTime;
 
             if (timeLeft < 0)
             {
@@ -81,4 +87,39 @@ namespace ChaosMod
                 StartChaos();
         }
     }
+
+    public static class ChaosSettings
+    {
+        public static bool easyMode;
+        public static float loggerYOffset;
+
+        public static Dictionary<string, bool> eventEnabled = new Dictionary<string, bool>();
+
+        public static void Load()
+        {
+            easyMode = PlayerPrefs.GetInt("Chaos_EasyMode", 0) == 1;
+            loggerYOffset = PlayerPrefs.GetFloat("Chaos_LoggerYOffset", 0f);
+
+            foreach (var key in eventEnabled.Keys.ToList())
+            {
+                eventEnabled[key] = PlayerPrefs.GetInt("Chaos_Event_" + key, 1) == 1;
+            }
+
+            Main.hardMode = !easyMode;
+        }
+
+        public static void Save()
+        {
+            PlayerPrefs.SetInt("Chaos_EasyMode", easyMode ? 1 : 0);
+            PlayerPrefs.SetFloat("Chaos_LoggerYOffset", loggerYOffset);
+
+            foreach (var kv in eventEnabled)
+            {
+                PlayerPrefs.SetInt("Chaos_Event_" + kv.Key, kv.Value ? 1 : 0);
+            }
+
+            PlayerPrefs.Save();
+        }
+    }
+
 }

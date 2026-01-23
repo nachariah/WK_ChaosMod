@@ -1,6 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection.Emit;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace ChaosMod.UI
@@ -16,6 +20,7 @@ namespace ChaosMod.UI
         private RectTransform listRoot;
 
         private readonly List<EventEntry> entries = new List<EventEntry>();
+        public static List<Toggle> EventToggles = new List<Toggle>();
 
         public static void ShowUI()
         {
@@ -109,7 +114,8 @@ namespace ChaosMod.UI
         }
         private void RepositionEntries()
         {
-            float y = 0f;
+            float y = ChaosSettings.loggerYOffset;
+
             for (int i = 0; i < entries.Count; i++)
             {
                 entries[i].SetTargetPosition(new Vector2(0f, y));
@@ -129,38 +135,411 @@ namespace ChaosMod.UI
         }
         public static void CreateMainMenuText()
         {
-            // Canvas
-            GameObject canvasObj = new GameObject("Canvas");
-            canvasObj.transform.SetParent(new GameObject("ChaosVersion").transform, false);
+            GameObject root = new GameObject("ChaosMainMenuUI");
 
-            Canvas canvas = canvasObj.AddComponent<Canvas>();
+            Canvas canvas = root.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 0;
+            canvas.sortingOrder = 999;
 
-            canvasObj.AddComponent<CanvasScaler>().uiScaleMode =
-                CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            root.AddComponent<CanvasScaler>().uiScaleMode =CanvasScaler.ScaleMode.ScaleWithScreenSize;
 
-            // Text
-            GameObject textObj = new GameObject("StatusText");
-            textObj.transform.SetParent(canvasObj.transform, false);
-
-            TMP_Text statusText = textObj.AddComponent<TextMeshProUGUI>();
-            statusText.text = "CHAOS MOD v"+Plugin.pluginVersion;
-            statusText.fontSize = 14;
-            statusText.color = Color.white;
-            statusText.alignment = TextAlignmentOptions.TopRight;
+            root.AddComponent<GraphicRaycaster>();
 
             TMP_FontAsset font = FindTicketingFont();
-            if (font != null)
-                statusText.font = font;
 
-            RectTransform rect = statusText.rectTransform;
-            rect.anchorMin = new Vector2(1f, 1f);
-            rect.anchorMax = new Vector2(1f, 1f);
-            rect.pivot = new Vector2(1f, 1f);
+            // Version
+            CreateText(root.transform,$"CHAOS MOD v{Plugin.pluginVersion}",font,14,TextAlignmentOptions.TopRight,new Vector2(1, 1),new Vector2(-5, -30),new Vector2(250, 30));
 
-            rect.anchoredPosition = new Vector2(-5f, -30f);
-            rect.sizeDelta = new Vector2(250f, 30f);
+            // Button
+            Button btn = CreateButton(root.transform,"Chaos Options",font, new Vector2(1, 0),new Vector2(-120, 10),new Vector2(80, 16));
+
+            GameObject panel = CreateOptionsPanel(root.transform, font);
+            panel.SetActive(false);
+
+            btn.onClick.AddListener(() =>
+            {
+                panel.SetActive(!panel.activeSelf);
+            });
+        }
+        private static GameObject CreateOptionsPanel(Transform parent, TMP_FontAsset font)
+        {
+            GameObject panel = new GameObject("ChaosOptionsPanel");
+            panel.transform.SetParent(parent, false);
+
+            Image bg = panel.AddComponent<Image>();
+            bg.color = new Color(0, 0, 0, 0.75f);
+
+            RectTransform rect = bg.rectTransform;
+            rect.anchorMin = rect.anchorMax = new Vector2(1, 0);
+            rect.pivot = new Vector2(1, 0);
+            rect.sizeDelta = new Vector2(360, 420);
+            rect.anchoredPosition = new Vector2(-10, 30);
+
+            // =====================
+            // Easy Mode Toggle
+            // =====================
+            CreateToggle(
+                panel.transform,
+                "Easy Mode",
+                font,
+                new Vector2(10, -25),
+                new Vector2(330, 20),
+                ChaosSettings.easyMode,
+                v =>
+                {
+                    ChaosSettings.easyMode = v;
+                    ChaosSettings.Save();
+                });
+
+            // =====================
+            // Logger Offset Slider
+            // =====================
+            TMP_Text yLabel = CreateText(
+                panel.transform,
+                $"Logger Vertical Offset: {ChaosSettings.loggerYOffset}px",
+                font,
+                11,
+                TextAlignmentOptions.Left,
+                new Vector2(0, 1),
+                new Vector2(10, -60),
+                new Vector2(200, 18));
+
+            // Slider
+            CreateSlider(
+                panel.transform,
+                new Vector2(10, -85),
+                new Vector2(330, 8),
+                0,      // minimum
+                400,    // maximum
+                ChaosSettings.loggerYOffset,
+                v =>
+                {
+                    ChaosSettings.loggerYOffset = v;
+                    yLabel.text = $"Logger Vertical Offset: {v}px";
+                    ChaosSettings.Save();
+                });
+
+            // =====================
+            // Enabled Events Label
+            // =====================
+            CreateText(
+                panel.transform,
+                "Enabled Events:",
+                font,
+                11,
+                TextAlignmentOptions.Left,
+                new Vector2(0, 1),
+                new Vector2(10, -110),
+                new Vector2(200, 18));
+
+            // =====================
+            // Scroll Rect (Events)
+            // =====================
+            RectTransform content;
+            ScrollRect scroll = CreateScrollRect(
+                panel.transform,
+                new Vector2(10, 60),
+                new Vector2(340, 230),
+                out content);
+
+            // =====================
+            // Event Toggles
+            // =====================
+            EventToggles.Clear();
+
+            CreateBlankToggle(content,"",Vector2.zero, new Vector2(320, 18));
+
+            foreach (var key in ChaosSettings.eventEnabled.Keys)
+            {
+                string eventName = key;
+
+                Toggle t = CreateToggle(
+                    content,
+                    eventName,
+                    font,
+                    Vector2.zero,
+                    new Vector2(320, 15),
+                    ChaosSettings.eventEnabled[eventName],
+                    v =>
+                    {
+                        ChaosSettings.eventEnabled[eventName] = v;
+                        ChaosSettings.Save();
+                    });
+
+                EventToggles.Add(t);
+            }
+
+            CreateBlankToggle(content, "", Vector2.zero, new Vector2(320, 18));
+
+            // =====================
+            // Enable / Disable All Buttons
+            // =====================
+            Button enableAll = CreateButton(
+                panel.transform,
+                "Enable All",
+                font,
+                new Vector2(0, 0),
+                new Vector2(10, 10),
+                new Vector2(150, 28));
+
+            enableAll.onClick.AddListener(() =>
+            {
+                ChaosUIHelpers.SetAllToggles(true);
+                ChaosSettings.Save();
+            });
+
+            Button disableAll = CreateButton(
+                panel.transform,
+                "Disable All",
+                font,
+                new Vector2(1, 0),
+                new Vector2(-10, 10),
+                new Vector2(150, 28));
+
+            disableAll.onClick.AddListener(() =>
+            {
+                ChaosUIHelpers.SetAllToggles(false);
+                ChaosSettings.Save();
+            });
+
+            return panel;
+        }
+        public static TMP_Text CreateText(Transform parent,string text,TMP_FontAsset font,float size,TextAlignmentOptions alignment,Vector2 anchor,Vector2 pos,Vector2 dimensions)
+        {
+            GameObject go = new GameObject("Text");
+            go.transform.SetParent(parent, false);
+
+            RectTransform r = go.AddComponent<RectTransform>();
+            r.anchorMin = r.anchorMax = anchor;
+            r.pivot = anchor;
+            r.anchoredPosition = pos;
+            r.sizeDelta = dimensions;
+
+            TMP_Text t = go.AddComponent<TextMeshProUGUI>();
+            t.text = text;
+            t.font = font;
+            t.fontSize = size;
+            t.alignment = alignment;
+            t.color = Color.white;
+
+            return t;
+        }
+
+        static Button CreateButton(Transform parent, string text, TMP_FontAsset font, Vector2 anchor, Vector2 pos, Vector2 size)
+        {
+            GameObject go = new GameObject(text);
+            go.transform.SetParent(parent, false);
+
+            Image img = go.AddComponent<Image>();
+            img.color = new Color(1, 1, 1, 0.1f);
+
+            Button btn = go.AddComponent<Button>();
+
+            RectTransform r = img.rectTransform;
+            r.anchorMin = r.anchorMax = anchor;
+            r.pivot = anchor;
+            r.anchoredPosition = pos;
+            r.sizeDelta = size;
+
+            CreateText(go.transform, text, font, 12,
+                TextAlignmentOptions.Center, new Vector2(0.5f, 0.5f),
+                Vector2.zero, size);
+
+            return btn;
+        }
+        static void CreateLabel(Transform parent, string text, TMP_FontAsset font, ref float y)
+        {
+            CreateText(parent, text, font, 12,
+                TextAlignmentOptions.Left,
+                new Vector2(0, 1),
+                new Vector2(10, y),
+                new Vector2(300, 20));
+            y -= 20;
+        }
+        public static Toggle CreateBlankToggle(Transform parent, string label, Vector2 pos, Vector2 size)
+        {
+            GameObject root = new GameObject(label + "_Toggle");
+            root.transform.SetParent(parent, false);
+
+            RectTransform r = root.AddComponent<RectTransform>();
+            r.anchorMin = r.anchorMax = new Vector2(0, 1);
+            r.pivot = new Vector2(0, 1);
+            r.anchoredPosition = pos;
+            r.sizeDelta = size;
+
+            Toggle toggle = root.AddComponent<Toggle>();
+
+            // Background
+            GameObject bgObj = new GameObject("Background");
+            bgObj.transform.SetParent(root.transform, false);
+            Image bg = bgObj.AddComponent<Image>();
+            bg.color = new Color(1, 1, 1, 0f);
+
+            RectTransform bgRT = bg.rectTransform;
+            bgRT.anchorMin = bgRT.anchorMax = new Vector2(0, 0.5f);
+            bgRT.pivot = new Vector2(0, 0.5f);
+            bgRT.sizeDelta = new Vector2(14, 14);
+            bgRT.anchoredPosition = new Vector2(4, 0);
+
+            return toggle;
+        }
+        public static Toggle CreateToggle(Transform parent,string label,TMP_FontAsset font,Vector2 pos,Vector2 size,bool initialValue,Action<bool> onChanged)
+        {
+            GameObject root = new GameObject(label + "_Toggle");
+            root.transform.SetParent(parent, false);
+
+            RectTransform r = root.AddComponent<RectTransform>();
+            r.anchorMin = r.anchorMax = new Vector2(0, 1);
+            r.pivot = new Vector2(0, 1);
+            r.anchoredPosition = pos;
+            r.sizeDelta = size;
+
+            Toggle toggle = root.AddComponent<Toggle>();
+
+            // Background
+            GameObject bgObj = new GameObject("Background");
+            bgObj.transform.SetParent(root.transform, false);
+            Image bg = bgObj.AddComponent<Image>();
+            bg.color = new Color(1, 1, 1, 0.2f);
+
+            RectTransform bgRT = bg.rectTransform;
+            bgRT.anchorMin = bgRT.anchorMax = new Vector2(0, 0.5f);
+            bgRT.pivot = new Vector2(0, 0.5f);
+            bgRT.sizeDelta = new Vector2(14, 14);
+            bgRT.anchoredPosition = new Vector2(4, 0);
+
+            // Checkmark
+            GameObject ckObj = new GameObject("Checkmark");
+            ckObj.transform.SetParent(bgObj.transform, false);
+            Image ck = ckObj.AddComponent<Image>();
+            ck.color = Color.white;
+
+            RectTransform ckRT = ck.rectTransform;
+            ckRT.anchorMin = Vector2.zero;
+            ckRT.anchorMax = Vector2.one;
+            ckRT.offsetMin = ckRT.offsetMax = Vector2.zero;
+
+            // Label
+            CreateText(
+                root.transform,
+                label,
+                font,
+                10,
+                TextAlignmentOptions.Left,
+                new Vector2(0, 0.5f),
+                new Vector2(24, 0),
+                new Vector2(size.x - 24, size.y)
+            );
+
+            toggle.targetGraphic = bg;
+            toggle.graphic = ck;
+            toggle.isOn = initialValue;
+            toggle.onValueChanged.AddListener(v => onChanged(v));
+
+            return toggle;
+        }
+        public static ScrollRect CreateScrollRect(Transform parent,Vector2 pos,Vector2 size,out RectTransform content)
+        {
+            GameObject root = new GameObject("ScrollRect");
+            root.transform.SetParent(parent, false);
+
+            RectTransform r = root.AddComponent<RectTransform>();
+            r.anchorMin = r.anchorMax = new Vector2(0, 0);
+            r.pivot = new Vector2(0, 0);
+            r.anchoredPosition = pos;
+            r.sizeDelta = size;
+
+            // Viewport
+            GameObject viewport = new GameObject("Viewport");
+            viewport.transform.SetParent(root.transform, false);
+            RectTransform vpRT = viewport.AddComponent<RectTransform>();
+            vpRT.anchorMin = Vector2.zero;
+            vpRT.anchorMax = Vector2.one;
+            vpRT.offsetMin = vpRT.offsetMax = Vector2.zero;
+            viewport.AddComponent<RectMask2D>();
+
+            // Content
+            GameObject cont = new GameObject("Content");
+            cont.transform.SetParent(viewport.transform, false);
+            content = cont.AddComponent<RectTransform>();
+            content.anchorMin = new Vector2(0, 1);
+            content.anchorMax = new Vector2(1, 1);
+            content.pivot = new Vector2(0.5f, 1);
+            content.anchoredPosition = Vector2.zero;
+            content.sizeDelta = Vector2.zero;
+
+            VerticalLayoutGroup layout = cont.AddComponent<VerticalLayoutGroup>();
+            layout.childControlHeight = true;
+            layout.childForceExpandHeight = false;
+            layout.spacing = 15;
+
+            ContentSizeFitter fitter = cont.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            ScrollRect sr = root.AddComponent<ScrollRect>();
+            sr.viewport = vpRT;
+            sr.content = content;
+            sr.horizontal = false;
+
+            return sr;
+        }
+
+        public static Slider CreateSlider(Transform parent,Vector2 pos,Vector2 size,float min,float max,float value,Action<float> onChanged)
+        {
+            GameObject root = new GameObject("Slider");
+            root.transform.SetParent(parent, false);
+
+            RectTransform r = root.AddComponent<RectTransform>();
+            r.anchorMin = r.anchorMax = new Vector2(0, 1);
+            r.pivot = new Vector2(0, 1);
+            r.anchoredPosition = pos;
+            r.sizeDelta = size;
+
+            Slider slider = root.AddComponent<Slider>();
+            slider.minValue = min;
+            slider.maxValue = max;
+            slider.value = value;
+            slider.onValueChanged.AddListener(v => onChanged(v));
+
+            Image bg = root.AddComponent<Image>();
+            bg.color = new Color(1, 1, 1, 0.15f);
+            slider.targetGraphic = bg;
+
+            // Fill
+            GameObject fillObj = new GameObject("Fill");
+            fillObj.transform.SetParent(root.transform, false);
+            Image fill = fillObj.AddComponent<Image>();
+            fill.color = Color.white;
+
+            RectTransform fillRT = fill.rectTransform;
+            fillRT.anchorMin = Vector2.zero;
+            fillRT.anchorMax = new Vector2(0, 1);
+            fillRT.offsetMin = fillRT.offsetMax = Vector2.zero;
+            slider.fillRect = fillRT;
+
+            // Handle
+            GameObject handleObj = new GameObject("Handle");
+            handleObj.transform.SetParent(root.transform, false);
+            Image handle = handleObj.AddComponent<Image>();
+            handle.color = Color.white;
+
+            RectTransform handleRT = handle.rectTransform;
+            handleRT.sizeDelta = new Vector2(10, size.y);
+            slider.handleRect = handleRT;
+
+            return slider;
+        }
+
+    }
+    static class ChaosUIHelpers
+    {
+        public static void SetAllToggles(bool value)
+        {
+            foreach (var t in ChaosUI.EventToggles)
+            {
+                t.SetIsOnWithoutNotify(value);
+                t.onValueChanged.Invoke(value);
+            }
         }
     }
     public class EventEntry : MonoBehaviour

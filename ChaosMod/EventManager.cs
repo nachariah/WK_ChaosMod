@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.Video;
@@ -45,6 +46,13 @@ namespace ChaosMod.Events
             //Double Mass Speed
             //Spawn Face
             //Raining Gifts (Birthday)
+            foreach (var ev in Events)
+            {
+                if (!ChaosSettings.eventEnabled.ContainsKey(ev.name))
+                    ChaosSettings.eventEnabled.Add(ev.name, true);
+            }
+
+            ChaosSettings.Load();
         }
         public static void RandomEvent()
         {
@@ -52,7 +60,13 @@ namespace ChaosMod.Events
                 LoadBundle();
             if (Events.Count == 0)
                 FillList();
-            Event randEvent = Events[UnityEngine.Random.Range(0, Events.Count)];
+
+            var valid = Events.Where(e => ChaosSettings.eventEnabled.TryGetValue(e.name, out bool on) && on).ToList();
+
+            if (valid.Count == 0)
+                return;
+
+            Event randEvent = valid[UnityEngine.Random.Range(0, valid.Count)];
             ChaosUI.instance.AddEntry(randEvent.name, randEvent.time);
             randEvent.action?.Invoke();
         }
