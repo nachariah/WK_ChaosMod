@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.Video;
 
 namespace ChaosMod.Events
@@ -116,7 +117,7 @@ namespace ChaosMod.Events
 
             AudioSource source = go.AddComponent<AudioSource>();
             source.clip = clip;
-            source.volume = volume;
+            source.volume = volume * ChaosSettings.chaosVolume;
 
             if (distortion > 0f)
             {
@@ -166,6 +167,7 @@ namespace ChaosMod.Events
             }
 
             AudioSource song = obj.GetComponent<AudioSource>();
+            song.volume *= ChaosSettings.chaosVolume;
             song.gameObject.AddComponent<AudioDistortionFilter>().distortionLevel = 0.1f;
 
             obj.AddComponent<HouseAI>();
@@ -191,6 +193,8 @@ namespace ChaosMod.Events
             );
 
             obj.transform.localScale *= 6f;
+
+            obj.transform.GetComponentInChildren<AudioSource>().volume *= ChaosSettings.chaosVolume;
 
             VideoPlayer player = obj.GetComponentInChildren<VideoPlayer>();
             player.Play();
@@ -223,6 +227,7 @@ namespace ChaosMod.Events
         {
             GameObject ship = Instantiate((GameObject)prefabs["PirateShip"]);
             ship.transform.position = ENT_Player.GetPlayer().transform.position + (Vector3.up * 400);
+            ship.GetComponent<AudioSource>().volume *= ChaosSettings.chaosVolume;
             ship.AddComponent<PirateAI>();
 
             var renderers = ship.GetComponentsInChildren<Renderer>(true);
@@ -309,6 +314,7 @@ namespace ChaosMod.Events
             }
 
             AudioSource song = train.GetComponent<AudioSource>();
+            song.volume *= ChaosSettings.chaosVolume;
             song.clip = (AudioClip)prefabs["OldSpice" + UnityEngine.Random.Range(1, 4).ToString()];
             train.AddComponent<AudioDistortionFilter>().distortionLevel = 0.85f;
             song.Play();
@@ -338,8 +344,11 @@ namespace ChaosMod.Events
 
             obj.transform.localScale *= 5f;
 
+            obj.GetComponentInChildren<AudioSource>().volume *= ChaosSettings.chaosVolume;
+
             VideoPlayer player = obj.GetComponentInChildren<VideoPlayer>();
             player.Play();
+
 
             Renderer r = obj.GetComponent<Renderer>();
             r.material.shader = chaosBundle.LoadAsset<Shader>("VideoOverlay");

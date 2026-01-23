@@ -175,14 +175,12 @@ namespace ChaosMod.UI
             rect.sizeDelta = new Vector2(360, 420);
             rect.anchoredPosition = new Vector2(-10, 30);
 
-            // =====================
             // Easy Mode Toggle
-            // =====================
             CreateToggle(
                 panel.transform,
                 "Easy Mode",
                 font,
-                new Vector2(10, -25),
+                new Vector2(10, -12.5f),
                 new Vector2(330, 20),
                 ChaosSettings.easyMode,
                 v =>
@@ -191,9 +189,33 @@ namespace ChaosMod.UI
                     ChaosSettings.Save();
                 });
 
-            // =====================
+            //Volume Slider
+            TMP_Text vLabel = CreateText(
+                panel.transform,
+                $"Chaos Volume: {Mathf.RoundToInt(ChaosSettings.chaosVolume * 100f)}%",
+                font,
+                11,
+                TextAlignmentOptions.Left,
+                new Vector2(0, 1),
+                new Vector2(10, -35),
+                new Vector2(240, 18));
+
+            CreateSlider(
+                panel.transform,
+                new Vector2(10, -55),
+                new Vector2(330, 8),
+                0f,
+                1f,
+                ChaosSettings.chaosVolume,
+                v =>
+                {
+                    ChaosSettings.chaosVolume = v;
+                    ChaosSettings.Save();
+
+                    vLabel.text = $"Chaos Volume: {Mathf.RoundToInt(v * 100f)}%";
+                });
+
             // Logger Offset Slider
-            // =====================
             TMP_Text yLabel = CreateText(
                 panel.transform,
                 $"Logger Vertical Offset: {ChaosSettings.loggerYOffset}px",
@@ -201,13 +223,12 @@ namespace ChaosMod.UI
                 11,
                 TextAlignmentOptions.Left,
                 new Vector2(0, 1),
-                new Vector2(10, -60),
+                new Vector2(10, -70),
                 new Vector2(200, 18));
 
-            // Slider
             CreateSlider(
                 panel.transform,
-                new Vector2(10, -85),
+                new Vector2(10, -90),
                 new Vector2(330, 8),
                 0,      // minimum
                 400,    // maximum
@@ -219,9 +240,7 @@ namespace ChaosMod.UI
                     ChaosSettings.Save();
                 });
 
-            // =====================
             // Enabled Events Label
-            // =====================
             CreateText(
                 panel.transform,
                 "Enabled Events:",
@@ -232,9 +251,7 @@ namespace ChaosMod.UI
                 new Vector2(10, -110),
                 new Vector2(200, 18));
 
-            // =====================
-            // Scroll Rect (Events)
-            // =====================
+            // Scroll Rect
             RectTransform content;
             ScrollRect scroll = CreateScrollRect(
                 panel.transform,
@@ -242,9 +259,7 @@ namespace ChaosMod.UI
                 new Vector2(340, 230),
                 out content);
 
-            // =====================
             // Event Toggles
-            // =====================
             EventToggles.Clear();
 
             CreateBlankToggle(content,"",Vector2.zero, new Vector2(320, 18));
@@ -271,9 +286,7 @@ namespace ChaosMod.UI
 
             CreateBlankToggle(content, "", Vector2.zero, new Vector2(320, 18));
 
-            // =====================
             // Enable / Disable All Buttons
-            // =====================
             Button enableAll = CreateButton(
                 panel.transform,
                 "Enable All",

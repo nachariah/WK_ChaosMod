@@ -1,6 +1,7 @@
 ﻿using BepInEx;
 using HarmonyLib;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
 using ChaosMod.UI;
 using ChaosMod.Events;
@@ -92,14 +93,13 @@ namespace ChaosMod
     {
         public static bool easyMode;
         public static float loggerYOffset;
-
+        public static float chaosVolume = 1f;
         public static Dictionary<string, bool> eventEnabled = new Dictionary<string, bool>();
-
         public static void Load()
         {
             easyMode = PlayerPrefs.GetInt("Chaos_EasyMode", 0) == 1;
             loggerYOffset = PlayerPrefs.GetFloat("Chaos_LoggerYOffset", 0f);
-
+            chaosVolume = PlayerPrefs.GetFloat("Chaos_Volume", 1f);
             foreach (var key in eventEnabled.Keys.ToList())
             {
                 eventEnabled[key] = PlayerPrefs.GetInt("Chaos_Event_" + key, 1) == 1;
@@ -112,7 +112,7 @@ namespace ChaosMod
         {
             PlayerPrefs.SetInt("Chaos_EasyMode", easyMode ? 1 : 0);
             PlayerPrefs.SetFloat("Chaos_LoggerYOffset", loggerYOffset);
-
+            PlayerPrefs.SetFloat("Chaos_Volume", chaosVolume);
             foreach (var kv in eventEnabled)
             {
                 PlayerPrefs.SetInt("Chaos_Event_" + kv.Key, kv.Value ? 1 : 0);
