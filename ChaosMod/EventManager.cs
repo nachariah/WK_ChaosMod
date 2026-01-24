@@ -516,6 +516,10 @@ namespace ChaosMod.Events
                     {
                         bar = CL_AssetManager.GetFullCombinedAssetDatabase().itemPrefabs[i];
                     }
+                    else if (CL_AssetManager.GetFullCombinedAssetDatabase().itemPrefabs[i].name.ToLower() == "item_food_cookie")
+                    {
+                        cookie = CL_AssetManager.GetFullCombinedAssetDatabase().itemPrefabs[i];
+                    }
                 }
             }
         }
@@ -540,7 +544,7 @@ namespace ChaosMod.Events
             if (UnityEngine.Random.value > 0.8f)
             {
                 item = bar;
-            } else if ( UnityEngine.Random.value > 0.6f )
+            } else if ( UnityEngine.Random.value > 0.7f)
             {
                 item = cookie;
             }
@@ -815,21 +819,6 @@ namespace ChaosMod.Events
                 if (item.name.ToLower() == "denizen_face")
                     face = item;
             }
-        }
-    }
-    public static class MassHandler
-    {
-        public static void DoubleMassSpeed()
-        {
-            DEN_DeathFloor.instance.SetSpeed(DEN_DeathFloor.instance.GetCurrentSpeed() * 2f);
-        }
-        public static void ToggleMass()
-        {
-            DEN_DeathFloor.instance.SetActive(!DEN_DeathFloor.instance.IsActive());
-        }
-        public static void BringMassBelowPlayer()
-        {
-            DEN_DeathFloor.instance.SetHeight(new[] { "-30" });
         }
     }
 }
