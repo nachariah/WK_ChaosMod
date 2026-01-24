@@ -362,11 +362,14 @@ namespace ChaosMod.Events
             if (EntityHolder.explosiveRoach == null)
                 EntityHolder.SetVariables();
             Transform player = ENT_Player.GetPlayer().transform;
-            for (float x = -3f; x < 3f; x++)
+            int size = 3;
+            if (Main.hardMode)
+                size = 4;
+            for (float x = -size; x < size; x++)
             {
-                for (float z = -3f; z < 3f; z++)
+                for (float z = -size; z < size; z++)
                 {
-                    Instantiate(EntityHolder.explosiveRoach,player.position + player.forward + new Vector3(x/3,-0.5f,z/3),Quaternion.identity,CL_EventManager.currentLevel.transform);
+                    Instantiate(EntityHolder.explosiveRoach,player.position + player.forward + new Vector3(x/size, -0.5f,z/size),Quaternion.identity,CL_EventManager.currentLevel.transform);
                 }
             }
         }
