@@ -1,11 +1,13 @@
 ﻿using ChaosMod.UI;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.SceneManagement;
 using UnityEngine.Video;
 
 namespace ChaosMod.Events
@@ -18,8 +20,8 @@ namespace ChaosMod.Events
         public static void FillList()
         {
             Events.Clear();
-            //0-10
-            Events.Add(new Event().SetEntry("Perk Overdose",0f, PerkOverdose)); //10 of a random perk
+            //1-10
+            Events.Add(new Event().SetEntry("Perk Overdose", 0f, PerkOverdose)); //10 of a random perk
             Events.Add(new Event().SetEntry("Bloodbug Infestation", 0f, BloodbugHorde)); //10 Bloodbugs
             Events.Add(new Event().SetEntry("House M.D.", 30f, SpawnHouseMD)); //House M.D.
             Events.Add(new Event().SetEntry("Random Perk", 0f, RandomPerk));
@@ -29,7 +31,7 @@ namespace ChaosMod.Events
             Events.Add(new Event().SetEntry("It's Turbo Time!", 0f, TurboTime)); //Prepare for launch
             Events.Add(new Event().SetEntry("FEAST MODE ACTIVATED", 20f, FeastMode)); //Prepare for lunch
             Events.Add(new Event().SetEntry("Roach Rain", 20f, SkyDiamonds)); //Raining Plat. Roaches
-            //11-19
+            //11-20
             Events.Add(new Event().SetEntry("Yarr Harr", 0f, PirateShip)); //Incoming Pirateship
             Events.Add(new Event().SetEntry("Yahoo!", 0f, PlayerLaunch));
             Events.Add(new Event().SetEntry("Will you be my buddy?", 0f, SpawnBuddies));
@@ -37,16 +39,14 @@ namespace ChaosMod.Events
             Events.Add(new Event().SetEntry("Old Spice Train", 0f, OldSpiceTrain));
             Events.Add(new Event().SetEntry("Advertisement", 4f, JoeBiden));
             Events.Add(new Event().SetEntry("The Red Carpet", 0f, RedCarpet));
-            //Prop Magnet
-            //Shrek
-            //20-29
-            //Blizzard
-            //Christmas
-            //Toggle Mass
-            //Bring Mass Below You
-            //Double Mass Speed
-            //Spawn Face
-            //Raining Gifts (Birthday)
+            Events.Add(new Event().SetEntry("Prop Magnet", 0f, PropMagnet));
+            Events.Add(new Event().SetEntry("Spawn Shrek", 0f, SpawnShrek));
+            Events.Add(new Event().SetEntry("Spawn a Face", 0f, SpawnFace));
+            //21-23
+            Events.Add(new Event().SetEntry("Gift Rain", 10f, HappyBirthday)); 
+            Events.Add(new Event().SetEntry("BBQ CHICKEN ALERT", 12f, BBQChickenAlert));
+            Events.Add(new Event().SetEntry("Double Event!", 0f, DoubleRandomEvent));
+
             foreach (var ev in Events)
             {
                 if (!ChaosSettings.eventEnabled.ContainsKey(ev.name))
@@ -55,19 +55,23 @@ namespace ChaosMod.Events
 
             ChaosSettings.Load();
         }
-        public static void RandomEvent()
+        public static void RandomEvent(bool ignoreDouble = false)
         {
             if (chaosBundle == null)
                 LoadBundle();
             if (Events.Count == 0)
                 FillList();
 
-            var valid = Events.Where(e => ChaosSettings.eventEnabled.TryGetValue(e.name, out bool on) && on).ToList();
+            List<Event> valid = Events.Where(e => ChaosSettings.eventEnabled.TryGetValue(e.name, out bool on) && on).ToList();
 
             if (valid.Count == 0)
                 return;
 
-            Event randEvent = valid[UnityEngine.Random.Range(0, valid.Count)];
+            int range = valid.Count;
+            if (ignoreDouble)
+                range--;
+
+            Event randEvent = valid[UnityEngine.Random.Range(0, range)];
             ChaosUI.instance.AddEntry(randEvent.name, randEvent.time);
             randEvent.action?.Invoke();
         }
@@ -107,6 +111,10 @@ namespace ChaosMod.Events
             prefabs["OldSpice3"] = chaosBundle.LoadAsset<AudioClip>("OldSpice3");
             prefabs["TrainHit"] = chaosBundle.LoadAsset<AudioClip>("TrainHit");
             prefabs["JoeBiden"] = chaosBundle.LoadAsset<GameObject>("JoeBiden");
+            prefabs["BDay"] = chaosBundle.LoadAsset<AudioClip>("BDay");
+            prefabs["BBQChicken"] = chaosBundle.LoadAsset<AudioClip>("BBQChickenAudio");
+            prefabs["BBQChickenPlatform"] = chaosBundle.LoadAsset<GameObject>("BBQChickenPlatform");
+            prefabs["Shrek"] = chaosBundle.LoadAsset<GameObject>("Shrek");
         }
         public static void PlayAudio(AudioClip clip, float distortion = 0f, float volume = 1f)
         {
@@ -228,6 +236,7 @@ namespace ChaosMod.Events
             GameObject ship = Instantiate((GameObject)prefabs["PirateShip"]);
             ship.transform.position = ENT_Player.GetPlayer().transform.position + (Vector3.up * 400);
             ship.GetComponent<AudioSource>().volume *= ChaosSettings.chaosVolume;
+            ship.GetComponent<AudioDistortionFilter>().distortionLevel = 0.9f;
             ship.AddComponent<PirateAI>();
 
             var renderers = ship.GetComponentsInChildren<Renderer>(true);
@@ -279,7 +288,7 @@ namespace ChaosMod.Events
 
             for (int i = 0; i < amount; i++)
             {
-                GameObject copy = Instantiate(EntityHolder.propList[UnityEngine.Random.Range(0, EntityHolder.propList.Count - 1)],CL_EventManager.currentLevel.transform);
+                GameObject copy = Instantiate(EntityHolder.propList[UnityEngine.Random.Range(0, EntityHolder.propList.Count)],CL_EventManager.currentLevel.transform);
 
                 float x = UnityEngine.Random.Range(1f, 3f);
                 float z = UnityEngine.Random.Range(1f, 3f);
@@ -322,7 +331,7 @@ namespace ChaosMod.Events
             train.AddComponent<TrainAI>();
 
             GameObject terry = train.transform.GetChild(0).gameObject;
-            terry.AddComponent<TerryAI>();
+            terry.AddComponent<LookAtCamera>();
 
             Shader matShader = Shader.Find("Unlit/Unlit Transparent Color");
 
@@ -370,6 +379,70 @@ namespace ChaosMod.Events
                 for (float z = -size; z < size; z++)
                 {
                     Instantiate(EntityHolder.explosiveRoach,player.position + player.forward + new Vector3(x/size, -0.5f,z/size),Quaternion.identity,CL_EventManager.currentLevel.transform);
+                }
+            }
+        }
+        private static void HappyBirthday()
+        {
+            PlayAudio((AudioClip)prefabs["BDay"], 0.1f);
+            GameObject go = new GameObject();
+            go.AddComponent<GiftRain>();
+        }
+        private static void BBQChickenAlert()
+        {
+            PlayAudio((AudioClip)prefabs["BBQChicken"], 0.65f);
+            GameObject go = new GameObject();
+            go.AddComponent<BBQChickenThinker>();
+        }
+        private static void DoubleRandomEvent()
+        {
+            RandomEvent(true);
+            RandomEvent(true);
+        }
+        private static void SpawnFace()
+        {
+            if (EntityHolder.face == null)
+                EntityHolder.SetVariables();
+            GameObject face = Instantiate(EntityHolder.face);
+            face.transform.position = ENT_Player.GetPlayer().transform.position + (Vector3.down * 30);
+        }
+        private static void SpawnShrek()
+        {
+            GameObject obj = Instantiate((GameObject)prefabs["Shrek"], Camera.main.transform.position + (Vector3.down * 15), Quaternion.identity);
+
+            Shader matShader = Shader.Find("Unlit/Unlit Transparent Color");
+
+            if (matShader == null)
+            {
+                Debug.LogError("[ChaosMod] Could not find game shader!");
+                return;
+            }
+
+            foreach (var renderer in obj.GetComponentsInChildren<Renderer>())
+            {
+                foreach (var mat in renderer.materials)
+                {
+                    mat.shader = matShader;
+                }
+            }
+
+            AudioSource song = obj.GetComponent<AudioSource>();
+            song.volume *= ChaosSettings.chaosVolume;
+            song.gameObject.GetComponent<AudioDistortionFilter>().distortionLevel = 0.6f;
+
+            obj.AddComponent<ShrekAI>();
+        }
+        private static void PropMagnet()
+        {
+            List<CL_Prop> props = FindObjectsByType<CL_Prop>(FindObjectsSortMode.None).ToList();
+            foreach (var prop in props)
+            {
+                Rigidbody rb = prop.transform.GetComponent<Rigidbody>();
+                Debug.Log(prop.gameObject.name);
+                if (rb != null)
+                {
+                    Debug.Log("Found RB");
+                    rb.AddForce((ENT_Player.GetPlayer().transform.position - prop.transform.position) * 150 * rb.mass);
                 }
             }
         }
@@ -427,6 +500,7 @@ namespace ChaosMod.Events
         private static Transform player;
         private static GameObject beans = null;
         private static GameObject bar = null;
+        private static GameObject cookie = null;
         void Awake()
         {
             if (player == null)
@@ -462,9 +536,13 @@ namespace ChaosMod.Events
         void DropFood()
         {
             GameObject item = beans;
-            if (UnityEngine.Random.value > 0.75f)
+            float random = UnityEngine.Random.value;
+            if (UnityEngine.Random.value > 0.8f)
             {
                 item = bar;
+            } else if ( UnityEngine.Random.value > 0.6f )
+            {
+                item = cookie;
             }
             GameObject copy = Instantiate(item);
             copy.transform.position = player.position + new Vector3(UnityEngine.Random.Range(-2f, 2f), -1, UnityEngine.Random.Range(-2f, 2f));
@@ -600,29 +678,158 @@ namespace ChaosMod.Events
         }
         
     }
-    public class TerryAI : MonoBehaviour
+    public class LookAtCamera : MonoBehaviour
     {
         void Update()
         {
             transform.rotation = Quaternion.LookRotation(Camera.main.transform.position - transform.position, Vector3.up) * Quaternion.Euler(90f, 0f, 0f);
         }
     }
+    public class GiftRain : MonoBehaviour
+    {
+        private float timeLeft = 10f;
+        private float nextTick = 10f;
+        private static Transform player;
+        void Awake()
+        {
+            if (player == null)
+                player = ENT_Player.GetPlayer().gameObject.transform;
+            if (EntityHolder.giftList.Count == 0)
+                EntityHolder.SetVariables();
+        }
+        void Update()
+        {
+            if (nextTick >= timeLeft)
+            {
+                GameObject copy = Instantiate(EntityHolder.giftList[UnityEngine.Random.Range(0,EntityHolder.giftList.Count)]);
+                copy.transform.position = player.position + new Vector3(UnityEngine.Random.Range(-5f, 5f), 8, UnityEngine.Random.Range(-5f, 5f));
+                copy.transform.parent = CL_EventManager.currentLevel.transform;
+                nextTick -= 0.35f;
+            }
+
+            timeLeft -= Time.deltaTime;
+            if (timeLeft <= 0)
+            {
+                Destroy(gameObject);
+            }
+        }
+    }
+    public class BBQChickenThinker : MonoBehaviour
+    {
+        private float waitTime = 3f;
+        private float timeLeft = 9f;
+        private float nextTick = 9f;
+        private static Transform player;
+        private List<GameObject> platforms = new List<GameObject>();
+        private static Shader matShader = null;
+        void Awake()
+        {
+            if (player == null)
+                player = ENT_Player.GetPlayer().gameObject.transform;
+
+            if (matShader == null)
+                matShader = Shader.Find("Unlit/Unlit Transparent Color");
+        }
+        void Update()
+        {
+            if (waitTime > 0f)
+            {
+                waitTime -= Time.deltaTime;
+                return;
+            }
+
+            if (nextTick >= timeLeft)
+            {
+                Vector2 circle = UnityEngine.Random.insideUnitCircle.normalized * 3;
+                GameObject copy = Instantiate((GameObject)EventManager.prefabs["BBQChickenPlatform"]);
+                copy.transform.position = player.position + new Vector3(circle.x, UnityEngine.Random.Range(-2f, 6f), circle.y);
+                copy.AddComponent<LookAtCamera>();
+                platforms.Add(copy);
+                foreach (var renderer in copy.GetComponentsInChildren<Renderer>())
+                {
+                    foreach (var mat in renderer.materials)
+                    {
+                        mat.shader = matShader;
+                    }
+                }
+                nextTick -= 0.2f;
+            }
+
+            timeLeft -= Time.deltaTime;
+            if (timeLeft <= 0)
+            {
+                foreach (GameObject platform in platforms)
+                {
+                    Destroy(platform);
+                }
+                Destroy(gameObject);
+            }
+        }
+    }
+    public class ShrekAI : MonoBehaviour
+    {
+        private float timeLeft = 25f;
+        private Vector3 moveDir = Vector3.zero;
+        void Update()
+        {
+            Vector3 toCamera = Camera.main.transform.position - transform.position;
+            toCamera.Normalize();
+
+            transform.rotation = Quaternion.LookRotation(toCamera, Vector3.up) * Quaternion.Euler(90f, 0f, 0f);
+
+            if (Main.hardMode)
+                moveDir = Vector3.Lerp(moveDir, toCamera, Time.deltaTime*1.5f);
+            else
+                moveDir = Vector3.Lerp(moveDir, toCamera, Time.deltaTime/1.5f);
+
+            float multi = 12f;
+            if (Main.hardMode)
+                multi = 15f;
+            transform.position += moveDir * multi * Time.deltaTime;
+
+            timeLeft -= Time.deltaTime;
+            if (timeLeft <= 0)
+                Destroy(gameObject);
+        }
+    }
     public static class EntityHolder
     {
         public static GameObject buddy = null;
         public static GameObject explosiveRoach = null;
+        public static GameObject face = null;
         public static List<GameObject> propList = new List<GameObject>();
+        public static List<GameObject> giftList = new List<GameObject>();
         public static void SetVariables()
         {
             foreach (var item in CL_AssetManager.GetFullCombinedAssetDatabase().entityPrefabs)
             {
+                Debug.Log(item.name);
                 if (item.name.ToLower() == "denizen_drone_buddy")
                     buddy = item;
                 if(item.name.ToLower() == "denizen_roach_explosive")
                     explosiveRoach = item;
                 if (item.name.ToLower().Contains("prop_"))
                     propList.Add(item);
+                if (item.name.ToLower().Contains("present"))
+                    giftList.Add(item);
+                if (item.name.ToLower() == "denizen_face")
+                    face = item;
             }
+        }
+    }
+    public static class MassHandler
+    {
+        public static void DoubleMassSpeed()
+        {
+            DEN_DeathFloor.instance.SetSpeed(DEN_DeathFloor.instance.GetCurrentSpeed() * 2f);
+        }
+        public static void ToggleMass()
+        {
+            DEN_DeathFloor.instance.SetActive(!DEN_DeathFloor.instance.IsActive());
+        }
+        public static void BringMassBelowPlayer()
+        {
+            DEN_DeathFloor.instance.SetHeight(new[] { "-30" });
         }
     }
 }

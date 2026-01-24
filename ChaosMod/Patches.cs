@@ -35,6 +35,19 @@ namespace ChaosMod.Patches
                 EventManager.PlayAudio((AudioClip)EventManager.prefabs["TrainHit"], 0.75f, 0.9f);
                 __instance.Kill();
             }
+            else if (hit.gameObject.GetComponent<ShrekAI>() != null)
+            {
+                __instance.AddForce((__instance.transform.position - hit.transform.position).normalized * 20);
+                if (__instance.health - 1f <= 0f)
+                {
+                    CL_GameManager.DeathType shrekDeath = new CL_GameManager.DeathType();
+                    shrekDeath.deathText = "SHREKT";
+                    CL_GameManager.gMan.deathTypes[0] = shrekDeath;
+                    EventManager.PlayAudio((AudioClip)EventManager.prefabs["ShipCollide"], 0.8f);
+                    __instance.Kill();
+                } else
+                    __instance.Damage(1f,"");
+            }
         }
     }
 }

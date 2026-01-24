@@ -75,6 +75,7 @@ namespace ChaosMod
         }
         private static void StartChaos()
         {
+            EventManager.FillList();
             hardMode = CL_GameManager.IsHardmode();
             timeLeft = timeMax;
             ChaosUI.ShowUI();
