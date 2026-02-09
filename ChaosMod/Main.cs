@@ -14,7 +14,7 @@ namespace ChaosMod
     public class Plugin : BaseUnityPlugin
     {
         public const string pluginGuid = "nachariah.whiteknuckle.chaosmod";
-        public const string pluginVersion = "1.1.0";
+        public const string pluginVersion = "1.1.2";
 
         void Awake()
         {
@@ -105,8 +105,6 @@ namespace ChaosMod
             {
                 eventEnabled[key] = PlayerPrefs.GetInt("Chaos_Event_" + key, 1) == 1;
             }
-
-            Main.hardMode = !easyMode;
         }
 
         public static void Save()

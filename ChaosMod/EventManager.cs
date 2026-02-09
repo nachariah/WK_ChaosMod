@@ -239,6 +239,9 @@ namespace ChaosMod.Events
             ship.GetComponent<AudioDistortionFilter>().distortionLevel = 0.9f;
             ship.AddComponent<PirateAI>();
 
+            GameObject indicate = ship.transform.GetChild(0).gameObject;
+            IndicatorThinker thinker = indicate.AddComponent<IndicatorThinker>();
+
             var renderers = ship.GetComponentsInChildren<Renderer>(true);
             foreach (var r in renderers)
             {
@@ -332,6 +335,11 @@ namespace ChaosMod.Events
 
             GameObject terry = train.transform.GetChild(0).gameObject;
             terry.AddComponent<LookAtCamera>();
+
+            GameObject indicate = train.transform.GetChild(1).gameObject;
+            IndicatorThinker thinker = indicate.AddComponent<IndicatorThinker>();
+            thinker.baseScale = 0.002f;
+            thinker.disappearingDistance = 40f;
 
             Shader matShader = Shader.Find("Unlit/Unlit Transparent Color");
 
@@ -438,10 +446,8 @@ namespace ChaosMod.Events
             foreach (var prop in props)
             {
                 Rigidbody rb = prop.transform.GetComponent<Rigidbody>();
-                Debug.Log(prop.gameObject.name);
                 if (rb != null)
                 {
-                    Debug.Log("Found RB");
                     rb.AddForce((ENT_Player.GetPlayer().transform.position - prop.transform.position) * 150 * rb.mass);
                 }
             }
@@ -541,10 +547,10 @@ namespace ChaosMod.Events
         {
             GameObject item = beans;
             float random = UnityEngine.Random.value;
-            if (UnityEngine.Random.value > 0.8f)
+            if (random > 0.8f)
             {
                 item = bar;
-            } else if ( UnityEngine.Random.value > 0.7f)
+            } else if (random > 0.7f)
             {
                 item = cookie;
             }
@@ -680,7 +686,6 @@ namespace ChaosMod.Events
             if (dist > 600)
                 Destroy(gameObject);
         }
-        
     }
     public class LookAtCamera : MonoBehaviour
     {
@@ -794,6 +799,27 @@ namespace ChaosMod.Events
             timeLeft -= Time.deltaTime;
             if (timeLeft <= 0)
                 Destroy(gameObject);
+        }
+    }
+    public class IndicatorThinker : MonoBehaviour
+    {
+        public float baseScale = 1f;
+        public float disappearingDistance = 25f;
+        private Vector3 pLast = Vector3.zero;
+        void Start()
+        {
+            pLast = Camera.main.transform.position;
+        }
+        void Update()
+        {
+            pLast = Vector3.Lerp(pLast, Camera.main.transform.position,0.2f);
+            transform.rotation = Quaternion.LookRotation(pLast - transform.position, Vector3.up) * Quaternion.Euler(90f, 0f, 0f);
+            float dist = Vector3.Distance(transform.position, Camera.main.transform.position);
+            transform.localScale = Vector3.one * baseScale * Mathf.Clamp(1000 / dist, 0.5f, 2f);
+            if (dist < disappearingDistance)
+            {
+                Destroy(gameObject);
+            }
         }
     }
     public static class EntityHolder
