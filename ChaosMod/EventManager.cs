@@ -1,4 +1,5 @@
-﻿using ChaosMod.UI;
+﻿using BepInEx.Configuration;
+using ChaosMod.UI;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -137,10 +138,50 @@ namespace ChaosMod.Events
 
             Destroy(go, clip.length);
         }
+        private static Perk GetRandomPerk()
+        {
+            List<Perk> perkAssets = CL_AssetManager.GetFullCombinedAssetDatabase().perkAssets;
+            List<Perk> perkPool = new List<Perk>();
+            if (perkAssets == null || perkAssets.Count == 0)
+            {
+                Debug.LogError("[ChaosMod] GetRandomPerk() due to no/null perks");
+                return null;
+            }
+
+            string[] excludedTags =
+            {
+                "_Injury",
+                "_Debuff"
+            };
+
+            foreach (var perk in perkAssets)
+            {
+                string perkName = perk.name;
+
+                bool validType = perkName.Contains("_C") || perkName.Contains("_T") || perkName.Contains("_Rho") || perkName.Contains("_Binding") || perkName.Contains("_Upgrade");
+
+                bool excluded = false;
+                foreach (string tag in excludedTags)
+                {
+                    if (perkName.Contains(tag))
+                    {
+                        excluded = true;
+                        break;
+                    }
+                }
+
+                if (!validType || excluded)
+                    continue;
+
+                perkPool.Add(perk);
+            }
+
+            return perkPool[UnityEngine.Random.Range(0,perkPool.Count)];
+        }
         //Event Methods
         private static void PerkOverdose()
         {
-            Perk randomPerk = CL_AssetManager.GetFullCombinedAssetDatabase().perkAssets[UnityEngine.Random.Range(0, CL_AssetManager.GetFullCombinedAssetDatabase().perkAssets.Count)];
+            Perk randomPerk = GetRandomPerk();
 
             for (int i = 0; i < 10; i++)
             {
@@ -182,7 +223,7 @@ namespace ChaosMod.Events
         }
         private static void RandomPerk()
         {
-            ENT_Player.GetPlayer().AddPerk(CL_AssetManager.GetFullCombinedAssetDatabase().perkAssets[UnityEngine.Random.Range(0, CL_AssetManager.GetFullCombinedAssetDatabase().perkAssets.Count)]);
+            ENT_Player.GetPlayer().AddPerk(GetRandomPerk());
         }
         private static void RandomItem()
         {
