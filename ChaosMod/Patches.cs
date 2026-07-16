@@ -17,6 +17,26 @@ namespace ChaosMod.Patches
             Main.MainUpdate();
         }
     }
+    [HarmonyPatch(typeof(ENT_Player), "Revive")]
+    public static class ENT_Player_Revive_Patch
+    {
+        [HarmonyPostfix]
+        private static void Postfix(ENT_Player __instance)
+        {
+            Main.AddPause();
+            ChaosUI.instance.RemoveAllEntries();
+            Main.AddPause(false);
+        }
+    }
+    [HarmonyPatch(typeof(ENT_Player), "SetCutsceneMode")]
+    public static class ENT_Player_SetCutsceneMode_Patch
+    {
+        [HarmonyPrefix]
+        private static void Prefix(ENT_Player __instance, bool b)
+        {
+            Main.AddPause(b, true);
+        }
+    }
     [HarmonyPatch(typeof(UT_PlayerForceMover), "Start")]
     public static class UT_PlayerForceMover_Start_Patch
     {
@@ -75,7 +95,7 @@ namespace ChaosMod.Patches
                 pirateDeath.deathText = "DEAD MEN TELL NO TALES";
                 CL_GameManager.gMan.deathTypes[0] = pirateDeath;
                 EventManager.PlayAudio((AudioClip)EventManager.prefabs["ShipCollide"], 0.5f, 1f, AudioUtils.GetEffectsMixer());
-                Damageable.DamageInfo info = Damageable.DamageInfo.CreateDamageInfo(1f, "Ghost Ship", new List<string>(), null);
+                Damageable.DamageInfo info = Damageable.DamageInfo.CreateDamageInfo(1f, "The Ghost Ship", new List<string>(), null);
                 __instance.Kill(info.type, info);
             }
             else if (hit.gameObject.GetComponent<TrainAI>() != null)
@@ -83,7 +103,9 @@ namespace ChaosMod.Patches
                 CL_GameManager.DeathType spiceDeath = new CL_GameManager.DeathType();
                 spiceDeath.deathText = "TOO MUCH OLD SPICE";
                 CL_GameManager.gMan.deathTypes[0] = spiceDeath;
-                EventManager.PlayAudio((AudioClip)EventManager.prefabs["TrainHit"], 0.4f, 0.5f, AudioUtils.GetEffectsMixer());
+                EventManager.PlayAudio((AudioClip)EventManager.prefabs["TrainHit"], 0.5f, 1f, AudioUtils.GetEffectsMixer());
+                if (hit.gameObject.TryGetComponent<AudioSource>(out AudioSource song))
+                    song.volume = 0.5f;
                 Damageable.DamageInfo info = Damageable.DamageInfo.CreateDamageInfo(1f, "Terry Crews", new List<string>(), null);
                 __instance.Kill(info.type, info);
             }

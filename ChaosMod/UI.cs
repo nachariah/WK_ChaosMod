@@ -180,9 +180,6 @@ namespace ChaosMod.UI
         }
         public static void SetEndScreens()
         {
-            GameObject winTipObj = GameObject.Find("GameManager/Canvas/Score Screen/ScorePanel_Standard_Win(Clone)/Score Screen Root/Tip");
-            GameObject loseTipObj = GameObject.Find("GameManager/Canvas/Score Screen/ScorePanel_Standard_Death(Clone)/Score Screen Root/Tip");
-
             string tipText = "Chaos Mod";
 
             if (difficultyDict == null)
@@ -212,19 +209,12 @@ namespace ChaosMod.UI
                     tipText += "s";
             }
 
-            if (winTipObj != null)
-            {
-                TextMeshProUGUI text = winTipObj.GetComponent<TextMeshProUGUI>();
-                text.text = tipText;
-            }
+            CL_GameManager.gMan.statManager.GetScoreScreen(false).SetTip(tipText);
+            CL_GameManager.gMan.statManager.GetScoreScreen(true).SetTip(tipText);
 
-            if (loseTipObj != null)
-            {
-                TextMeshProUGUI text = loseTipObj.GetComponent<TextMeshProUGUI>();
-                text.text = tipText;
-                text.fontSize = 24;
-                text.fontSizeMax = 24;
-            }
+            if (CL_GameManager.curDeathType != null)
+                CL_GameManager.gMan.statManager.GetScoreScreen(false).SetDeathText(CL_GameManager.curDeathType.deathText);
+
         }
         public void FlashScreen(Color color, float duration = 0.15f)
         {

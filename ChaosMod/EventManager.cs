@@ -237,7 +237,7 @@ namespace ChaosMod.Events
                     }
                 }
 
-                if (flagged)
+                if (flagged && itemName.ToLower() != "item_component")
                     itemPool.Add(item);
             }
 
@@ -306,11 +306,11 @@ namespace ChaosMod.Events
             Vector3 center = ENT_Player.GetPlayer().transform.position;
             GameObject original = EntityHolder.GetEntityObject("denizen_bloodbug");
 
-            SpawnObjectCircle(original, center, entry);
+            SpawnObjectCircle(original, center, entry, 10f, 4f);
         }
         private static void SpawnHouseMD(EventEntry entry)
         {
-            GameObject obj = Instantiate((GameObject)prefabs["House"], Camera.main.transform.position + Camera.main.transform.forward * 10, Quaternion.identity);
+            GameObject obj = Instantiate((GameObject)prefabs["House"], Camera.main.transform.position + (UnityEngine.Random.onUnitSphere * 10f), Quaternion.identity);
             entry.relatedObjects.Add(obj);
 
             Shader matShader = Shader.Find("Unlit/Unlit Transparent Color");
@@ -353,13 +353,24 @@ namespace ChaosMod.Events
         }
         private static void RandomTrinket(EventEntry entry)
         {
-            string[] tags =
+            string[] itemTags =
             {
                 "_Trinket_"
             };
             
-            Item item = GetRandomItem(tags).GetComponent<Item_Object>().itemData;
-            ENT_Player.GetInventory().AddItemToInventoryScreen(new Vector3(0f, 0f, 1f) + UnityEngine.Random.insideUnitSphere * 0.01f, item, true, true, true);
+            Item item = GetRandomItem(itemTags).GetComponent<Item_Object>().itemData.GetClone();
+
+            string[] perkTags =
+            {
+                "_Upgrade_Bag_SizeUp"
+            };
+
+            Perk trinketPerk = GetRandomPerk(perkTags);
+
+            if (UnityEngine.Random.value > 0.0667f)
+                ENT_Player.GetInventory().AddItemToInventoryScreen(new Vector3(0f, 0f, 1f) + UnityEngine.Random.insideUnitSphere * 0.01f, item, true, false, true);
+            else
+                ENT_Player.GetPlayer().AddPerk(trinketPerk);
         }
         private static void RandomBinding(EventEntry entry)
         {
@@ -376,8 +387,8 @@ namespace ChaosMod.Events
         }
         private static void RandomItem(EventEntry entry)
         {
-            Item item = GetRandomItem().GetComponent<Item_Object>().itemData;
-            ENT_Player.GetInventory().AddItemToInventoryScreen(new Vector3(0f, 0f, 1f) + UnityEngine.Random.insideUnitSphere * 0.01f, item, true, true, true);
+            Item item = GetRandomItem().GetComponent<Item_Object>().itemData.GetClone();
+            ENT_Player.GetInventory().AddItemToInventoryScreen(new Vector3(0f, 0f, 1f) + UnityEngine.Random.insideUnitSphere * 0.01f, item, true, false, true);
         }
         private static void RandomArtifact(EventEntry entry)
         {
@@ -386,8 +397,8 @@ namespace ChaosMod.Events
                 "_Artifact_"
             };
 
-            Item item = GetRandomItem(tags).GetComponent<Item_Object>().itemData;
-            ENT_Player.GetInventory().AddItemToInventoryScreen(new Vector3(0f, 0f, 1f) + UnityEngine.Random.insideUnitSphere * 0.01f, item, true, true, true);
+            Item item = GetRandomItem(tags).GetComponent<Item_Object>().itemData.GetClone();
+            ENT_Player.GetInventory().AddItemToInventoryScreen(new Vector3(0f, 0f, 1f) + UnityEngine.Random.insideUnitSphere * 0.01f, item, true, false, true);
         }
         private static void YoinkItem(EventEntry entry)
         {
@@ -456,9 +467,11 @@ namespace ChaosMod.Events
             GameObject ship = Instantiate((GameObject)prefabs["PirateShip"]);
             entry.relatedObjects.Add(ship);
             ship.transform.position = ENT_Player.GetPlayer().transform.position + (Vector3.up * 400);
-            ship.GetComponent<AudioSource>().volume = 0.75f;
+            ship.GetComponent<AudioSource>().volume = 1f;
+            ship.AddComponent<AudioDistortionFilter>().distortionLevel = 0.25f;
             ship.GetComponent<AudioSource>().outputAudioMixerGroup = AudioUtils.GetEffectsMixer();
-            ship.GetComponent<AudioDistortionFilter>().distortionLevel = 0.75f;
+            ship.GetComponent<AudioSource>().maxDistance = 40f;
+            ship.GetComponent<AudioSource>().minDistance = 25f;
             ship.AddComponent<PirateAI>();
 
             GameObject indicate = ship.transform.GetChild(0).gameObject;
@@ -550,10 +563,11 @@ namespace ChaosMod.Events
             }
 
             AudioSource song = train.GetComponent<AudioSource>();
-            song.volume = 0.3f;
+            song.volume = 0.65f;
             song.outputAudioMixerGroup = AudioUtils.GetEffectsMixer();
             song.clip = (AudioClip)prefabs["OldSpice" + UnityEngine.Random.Range(1, 4).ToString()];
-            train.AddComponent<AudioDistortionFilter>().distortionLevel = 0.025f;
+            song.maxDistance = 40f;
+            song.minDistance = 25f;
             song.Play();
 
             train.AddComponent<TrainAI>();
@@ -645,7 +659,7 @@ namespace ChaosMod.Events
         }
         private static void SpawnShrek(EventEntry entry)
         {
-            GameObject obj = Instantiate((GameObject)prefabs["Shrek"], Camera.main.transform.position + (Vector3.down * 15), Quaternion.identity);
+            GameObject obj = Instantiate((GameObject)prefabs["Shrek"], Camera.main.transform.position + (UnityEngine.Random.onUnitSphere * 15), Quaternion.identity);
             entry.relatedObjects.Add(obj);
 
             Shader matShader = Shader.Find("Unlit/Unlit Transparent Color");
@@ -677,7 +691,7 @@ namespace ChaosMod.Events
             foreach (var prop in props)
             {
                 Rigidbody rb = prop.transform.GetComponent<Rigidbody>();
-                if (rb != null)
+                if (rb != null && prop.gameObject.activeInHierarchy && prop.GetComponent<Item_Object>() == null)
                 {
                     rb.AddForce((ENT_Player.GetPlayer().transform.position - prop.transform.position) * 150 * rb.mass);
                 }
@@ -685,6 +699,7 @@ namespace ChaosMod.Events
         }
         private static void ButterFingers(EventEntry entry)
         {
+            if (ENT_Player.GetPlayer().AreHandsFree()) return;
             PlayAudio((AudioClip)prefabs["ButterfingerSlip"], 0f, 0.5f, AudioUtils.GetEffectsMixer());
             ENT_Player.GetPlayer().DropHang();
             ENT_Player.GetInventory().DropItemFromHand(Camera.main.transform.position + Camera.main.transform.forward, 0);
@@ -723,16 +738,19 @@ namespace ChaosMod.Events
             Vector3 center = ENT_Player.GetPlayer().transform.position;
             GameObject original = EntityHolder.GetEntityObject("denizen_turret_basic");
 
-            SpawnObjectCircle(original, center, entry, 5f, 3f, true);
+            float amount = 3;
+            if (Main.hardMode)
+                amount = 4;
+
+            SpawnObjectCircle(original, center, entry, amount, 5f, true);
         }
         private static void PropLoot(EventEntry entry)
         {
-            GameObject level = CL_EventManager.currentLevel.gameObject;
-            CL_Prop[] props = level.GetComponentsInChildren<CL_Prop>();
+            List<CL_Prop> props = FindObjectsByType<CL_Prop>(FindObjectsSortMode.None).ToList();
 
             foreach (CL_Prop prop in props)
             {
-                if (prop.GetComponent<Item_Object>() != null)
+                if (prop.GetComponent<Item_Object>() != null || !prop.gameObject.activeInHierarchy)
                     continue;
                 GameObject item = Instantiate(GetRandomItem(),prop.transform.position,Quaternion.identity);
                 Destroy(prop.gameObject);
@@ -894,7 +912,7 @@ namespace ChaosMod.Events
                 pirateDeath.deathText = "DEAD MEN TELL NO TALES";
                 CL_GameManager.gMan.deathTypes[0] = pirateDeath;
                 EventManager.PlayAudio((AudioClip)EventManager.prefabs["ShipCollide"], 0.5f, 1f, AudioUtils.GetEffectsMixer());
-                Damageable.DamageInfo info = Damageable.DamageInfo.CreateDamageInfo(1f, "Ghost Ship", new List<string>(), null);
+                Damageable.DamageInfo info = Damageable.DamageInfo.CreateDamageInfo(1f, "The Ghost Ship", new List<string>(), null);
                 ENT_Player.GetPlayer().Kill(info.type, info);
             }
             if (diff < -50)
@@ -930,18 +948,16 @@ namespace ChaosMod.Events
 
             float dist = Vector3.Distance(transform.position, player.position + (Vector3.up/2));
 
-            if (!pDead && !passed)
-                transform.GetComponent<AudioDistortionFilter>().distortionLevel = Mathf.Clamp(dist/1000,0f,0.2f) + 0.75f;
-
             if (Vector3.Distance(transform.position + (Vector3.up/2), player.position) < 1.5f && !pDead && !ENT_Player.GetPlayer().IsDead())
             {
                 pDead = true;
                 CL_GameManager.DeathType spiceDeath = new CL_GameManager.DeathType();
                 spiceDeath.deathText = "TOO MUCH OLD SPICE";
                 CL_GameManager.gMan.deathTypes[0] = spiceDeath;
-                EventManager.PlayAudio((AudioClip)EventManager.prefabs["TrainHit"], 0.75f, 0.9f);
-                song.volume = 0.75f;
-                ENT_Player.GetPlayer().Kill();
+                EventManager.PlayAudio((AudioClip)EventManager.prefabs["TrainHit"], 0.5f, 1f, AudioUtils.GetEffectsMixer());
+                song.volume = 0.5f;
+                Damageable.DamageInfo info = Damageable.DamageInfo.CreateDamageInfo(1f, "Terry Crews", new List<string>(), null);
+                ENT_Player.GetPlayer().Kill(info.type, info);
             }
 
             if (dist > 40f && !passed)
@@ -952,8 +968,6 @@ namespace ChaosMod.Events
             }
             else
                 passed = true;
-            if (dist > 40f && passed && song != null && song.volume > 0)
-                transform.GetComponent<AudioDistortionFilter>().distortionLevel -= Time.deltaTime / 5;
             if (dist > 600)
                 Destroy(gameObject);
         }

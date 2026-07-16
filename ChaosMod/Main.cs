@@ -14,7 +14,7 @@ namespace ChaosMod
     public class Plugin : BaseUnityPlugin
     {
         public const string pluginGuid = "nachariah.whiteknuckle.chaosmod";
-        public const string pluginVersion = "1.2.0";
+        public const string pluginVersion = "1.2.1";
 
         public static Dictionary<int,float> difficultyTimers = new Dictionary<int,float>();
 
@@ -56,12 +56,14 @@ namespace ChaosMod
         private static float timeLeft;
 
         public static int pauseThreshold = 0;
+        private static bool inCutscene = false;
 
         private static float timeSinceStart = 0f;
 
         public static void MainUpdate()
         {
             if (!active || pauseThreshold > 0) return;
+            if (OS_Manager.IsAnyComputerInUse()) { timeSinceStart = 0; return; }
 
             float deltaTime = Time.deltaTime;
 
@@ -111,8 +113,13 @@ namespace ChaosMod
             if (SceneManager.GetActiveScene().name == "Game-Main")
                 StartChaos();
         }
-        public static void AddPause(bool b = true)
+        public static void AddPause(bool b = true, bool cutscene = false)
         {
+            if (cutscene)
+            {
+                if (inCutscene == b) return;
+                inCutscene = b;
+            }
             if (b)
                 pauseThreshold++;
             else
