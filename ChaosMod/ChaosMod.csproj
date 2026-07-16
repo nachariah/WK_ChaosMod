@@ -44,6 +44,13 @@
     <Reference Include="BepInEx">
       <HintPath>..\..\MaxRoaches\Libraries\BepInEx.dll</HintPath>
     </Reference>
+    <Reference Include="DarkMachineUI">
+      <HintPath>..\..\MaxRoaches\Libraries\DarkMachineUI.dll</HintPath>
+    </Reference>
+    <Reference Include="DOTween, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\MaxRoaches\Libraries\DOTween.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
