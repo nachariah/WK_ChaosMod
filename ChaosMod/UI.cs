@@ -162,7 +162,7 @@ namespace ChaosMod.UI
         }
         private static void LoadNameTruncates()
         {
-            nameTruncates["You are playing in IRON KNUCKLE mode. No perks for you!"] = "IRON KNUCKLE MODE";
+            nameTruncates["Remove All Stacks of a Random Perk"] = "Take an Entire Perk";
             nameTruncates["Will you be my buddy?"] = "Be my buddy?";
             nameTruncates["I'll take that, it's mine now"] = "I'll Take That";
             nameTruncates["Give up, you're surrounded"] = "You're Surrounded";
@@ -210,7 +210,23 @@ namespace ChaosMod.UI
             }
 
             CL_GameManager.gMan.statManager.GetScoreScreen(false).SetTip(tipText);
-            CL_GameManager.gMan.statManager.GetScoreScreen(true).SetTip(tipText);
+
+            GameObject winTipObj = GameObject.Find("GameManager/Canvas/Score Screen/ScorePanel_Standard_Win(Clone)/Score Screen Root/Tip");
+            GameObject loseTipObj = GameObject.Find("GameManager/Canvas/Score Screen/ScorePanel_Standard_Death(Clone)/Score Screen Root/Tip");
+
+            if (winTipObj != null)
+            {
+                TextMeshProUGUI text = winTipObj.GetComponent<TextMeshProUGUI>();
+                text.text = tipText;
+            }
+
+            if (loseTipObj != null)
+            {
+                TextMeshProUGUI text = loseTipObj.GetComponent<TextMeshProUGUI>();
+                text.text = tipText;
+                text.fontSize = 24;
+                text.fontSizeMax = 24;
+            }
 
             if (CL_GameManager.curDeathType != null)
                 CL_GameManager.gMan.statManager.GetScoreScreen(false).SetDeathText(CL_GameManager.curDeathType.deathText);

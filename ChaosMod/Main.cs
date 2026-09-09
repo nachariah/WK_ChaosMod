@@ -14,7 +14,7 @@ namespace ChaosMod
     public class Plugin : BaseUnityPlugin
     {
         public const string pluginGuid = "nachariah.whiteknuckle.chaosmod";
-        public const string pluginVersion = "1.2.1";
+        public const string pluginVersion = "1.2.2";
 
         public static Dictionary<int,float> difficultyTimers = new Dictionary<int,float>();
 

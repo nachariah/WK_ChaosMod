@@ -128,8 +128,8 @@ namespace ChaosMod.Patches
     [HarmonyPatch(typeof(CL_GameManager), "Win")]
     public static class CL_GameManager_Win_Patch
     {
-        [HarmonyPrefix]
-        private static void Prefix(CL_GameManager __instance)
+        [HarmonyPostfix]
+        private static void Postfix(CL_GameManager __instance)
         {
             ChaosUI.SetEndScreens();
         }

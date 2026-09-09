@@ -31,7 +31,7 @@ namespace ChaosMod.Events
             Events.Add(new Event().SetEntry("House M.D.", 30f, SpawnHouseMD));
             Events.Add(new Event().SetEntry("Random Perk", 0f, RandomPerk));
             Events.Add(new Event().SetEntry("Random Item", 0f, RandomItem));
-            Events.Add(new Event().SetEntry("You are playing in IRON KNUCKLE mode. No perks for you!", 0f, IronKnuckle, 30)); //Remove all Perks (and only perks)
+            Events.Add(new Event().SetEntry("Remove All Stacks of a Random Perk", 0f, RemoveAllOfPerk, 5));
             Events.Add(new Event().SetEntry("Jumpscare!", 0f, Jumpscare));
             Events.Add(new Event().SetEntry("It's Turbo Time!", 0f, TurboTime)); //Prepare for launch
             Events.Add(new Event().SetEntry("FEAST MODE ACTIVATED", 20f, FeastMode)); //Prepare for lunch
@@ -51,12 +51,12 @@ namespace ChaosMod.Events
             Events.Add(new Event().SetEntry("BBQ CHICKEN ALERT", 12f, BBQChickenAlert));
             Events.Add(new Event().SetEntry("Random Trinket", 0f, RandomTrinket));
             Events.Add(new Event().SetEntry("Random Binding", 60f, RandomBinding));
-            Events.Add(new Event().SetEntry("Random Artifact", 0f, RandomArtifact, 60)); //maybe too op
+            Events.Add(new Event().SetEntry("Random Artifact", 0f, RandomArtifact, 45)); //maybe too op
             Events.Add(new Event().SetEntry("Low Gravity", 15f, LowGravity));
             Events.Add(new Event().SetEntry("Butterfingers", 0f, ButterFingers));
-            Events.Add(new Event().SetEntry("Drunk", 15f, Drunk, 6));
+            Events.Add(new Event().SetEntry("Drunk", 15f, Drunk, 3));
             Events.Add(new Event().SetEntry("Give up, you're surrounded", 0f, TurretCircle));
-            Events.Add(new Event().SetEntry("Turn props into loot", 0f, PropLoot, 30));
+            Events.Add(new Event().SetEntry("Turn props into loot", 0f, PropLoot, 10));
             Events.Add(new Event().SetEntry("I'll take that, it's mine now", 0f, YoinkItem));
             //31
             Events.Add(new Event().SetEntry("Double Event!", 0f, DoubleRandomEvent)); //needs to be at the end beacuse I'm too lazy to do it differently
@@ -173,7 +173,7 @@ namespace ChaosMod.Events
 
             Destroy(go, clip.length);
         }
-        private static Perk GetRandomPerk(string[] tags = null)
+        private static Perk GetRandomPerk(string[] tags = null, string exception = null)
         {
             List<Perk> perkAssets = CL_AssetManager.GetFullCombinedAssetDatabase().perkAssets;
             if (perkAssets == null || perkAssets.Count == 0)
@@ -201,6 +201,9 @@ namespace ChaosMod.Events
                         break;
                     }
                 }
+
+                if (exception != null && perkName.ToLower().Contains(exception.ToLower()))
+                    continue;
 
                 if (flagged)
                     perkPool.Add(perk);
@@ -379,7 +382,17 @@ namespace ChaosMod.Events
                 "_Binding_"
             };
 
-            Perk binding = ENT_Player.GetPlayer().AddPerk(GetRandomPerk(tags));
+            string exception = null;
+            foreach (Perk perk in ENT_Player.GetPlayer().perks)
+            {
+                if (perk.name.ToLower().Contains("_RoachMode".ToLower()))
+                {
+                    exception = "_RoachMode";
+                    break;
+                }
+            }
+
+            Perk binding = ENT_Player.GetPlayer().AddPerk(GetRandomPerk(tags,exception));
             GameObject babysitter = new GameObject();
             babysitter.AddComponent<PerkBabySitter>().StartBabySitting(binding,60f);
             entry.relatedObjects.Add(babysitter);
@@ -410,9 +423,21 @@ namespace ChaosMod.Events
             item.Destroy();
             inv.CalculateEncumberance();
         }
-        private static void IronKnuckle(EventEntry entry)
+        private static void RemoveAllOfPerk(EventEntry entry)
         {
-            ENT_Player.GetPlayer().RemoveAllPerks(false);
+            List<Perk> allPerks = ENT_Player.GetPlayer().perks;
+            string[] filter = { "_Binding", "_Trinket", "_Injury", "_Upgrade_Bag" };
+            List<Perk> filteredPerks = new List<Perk>();
+            foreach (var perk in allPerks)
+            {
+                if (!filter.Any(name => perk.name.ToLower().Contains(name.ToLower())))
+                {
+                    filteredPerks.Add(perk);
+                }
+            }
+
+            if (filteredPerks.Count > 0)
+                ENT_Player.GetPlayer().RemovePerk(filteredPerks[UnityEngine.Random.Range(0, filteredPerks.Count)],true);
         }
         private static void Jumpscare(EventEntry entry)
         {
